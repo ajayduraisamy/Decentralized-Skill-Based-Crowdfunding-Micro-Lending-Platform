@@ -1,0 +1,9 @@
+{
+    "index": 0,
+    "timestamp": 1758175524.203695,
+    "data": {
+        "message": "Genesis Block"
+    },
+    "previous_hash": "0",
+    "hash": "193e5e780fa2dc811c80b330f2631a13a2eef81f80726cb608b22f82cb3a5740"
+}

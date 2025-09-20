@@ -10,7 +10,7 @@ from web3 import Web3
 # -------------------------------
 CONTRACTS_DIR = "contracts"
 GANACHE_URL = "http://127.0.0.1:8545"  # Ganache RPC URL
-install_solc("0.8.20")  # Ensure Solidity compiler installed
+install_solc("0.8.20") 
 
 # -------------------------------
 # ENSURE CONTRACTS FOLDER EXISTS

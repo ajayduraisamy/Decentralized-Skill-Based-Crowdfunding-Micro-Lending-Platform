@@ -1,21 +1,26 @@
 // src/pages/CreateProject.tsx
 import React, { useState } from "react";
 import axios from "axios";
+import type { UserType } from "../types";
 
-const CreateProject: React.FC = () => {
+// Declare props
+interface CreateProjectProps {
+  user: UserType | null;
+}
+
+const CreateProject: React.FC<CreateProjectProps> = ({ user }) => {
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Load borrower_id from localStorage
-    const storedUser = localStorage.getItem("user");
-    if (!storedUser) {
+    if (!user) {
       setMessage("You must be logged in to create a project.");
       return;
     }
-    const borrower_id = JSON.parse(storedUser).id;
+
+    const borrower_id = user.id;
 
     try {
       const res = await axios.post("http://localhost:5000/create_project", {

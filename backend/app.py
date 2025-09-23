@@ -24,7 +24,8 @@ CONTRACT_ADDRESS = os.getenv("ACCOUNT_KEY")
 # FLASK SETUP
 # -------------------------------
 app = Flask(__name__)
-CORS(app)
+app.secret_key = os.getenv("FLASK_SECRET_KEY") or "supersecretkey"
+CORS(app, origins=["http://localhost:5173"], supports_credentials=True)
 
 # -------------------------------
 # DATABASE CONFIG
@@ -87,17 +88,26 @@ def calculate_trust_score(user_id):
     conn.close()
     
     if not row or row["role"] != "borrower":
-        return 0  
+        return 70 
+
+   
+    if row["num_projects"] == 0:
+        return 70  
+
+    num_projects = max(1, row["num_projects"])
+    avg_completion = max(0.5, row["avg_milestone_completion"])
 
     features = pd.DataFrame([{
-        "num_projects": row["num_projects"],
-        "avg_milestone_completion": row["avg_milestone_completion"],
-        "skill_score": random.randint(50, 100),
-        "gpa": random.uniform(6.0, 10.0),
-        "repayment_rate": random.uniform(0.5, 1.0)
+        "num_projects": num_projects,
+        "avg_milestone_completion": avg_completion,
+        "skill_score": random.randint(70, 100),
+        "gpa": random.uniform(7.0, 10.0),
+        "repayment_rate": random.uniform(0.7, 1.0)
     }])
     probability = model.predict_proba(features)[0][1]
-    return int(probability * 100)
+    return max(70, int(probability * 100))  
+
+
 
 model = joblib.load("trust_score_model.pkl")
 
@@ -108,6 +118,10 @@ model = joblib.load("trust_score_model.pkl")
 def index():
     return jsonify({"message": "API is running"})
 
+
+#------------------------------
+# User Register
+#--------------------------------
 @app.route("/register", methods=["POST"])
 def register():
     data = request.json
@@ -116,43 +130,58 @@ def register():
     number = data.get("number")
     password = data.get("password")
     role = data.get("role")
-    blockchain_address = data.get("address")
+
+    # Generate blockchain account
+    new_account = w3.eth.account.create()
+    blockchain_address = new_account.address
+    private_key = new_account.key.hex() 
 
     hashed_pw = hash_password(password)
 
     # Blockchain simulation
-    block_data = {"name": name, "email": email, "number": number, "address": blockchain_address, "role": role}
+    block_data = {
+        "name": name,
+        "email": email,
+        "number": number,
+        "address": blockchain_address,
+        "role": role
+    }
     new_block = blockchain.add_block(block_data)
     block_hash = new_block.hash
 
-    # MySQL
+    # Save user in MySQL
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO users (name, email, number, password, role, blockchain_address, block_hash)
         VALUES (%s,%s,%s,%s,%s,%s,%s)
-    """, (name,email,number,hashed_pw,role,blockchain_address,block_hash))
+    """, (name, email, number, hashed_pw, role, blockchain_address, block_hash))
     conn.commit()
     cursor.close()
     conn.close()
 
-    # Solidity registration (if contract supports it)
+    # Solidity registration
     on_chain = False
     try:
         tx = contract_instance.functions.registerUser(blockchain_address, name).build_transaction({
             'from': backend_account.address,
             'nonce': w3.eth.get_transaction_count(backend_account.address),
             'gas': 3000000,
-            'gasPrice': w3.toWei('20','gwei')
+            'gasPrice': Web3.to_wei(20, 'gwei')
         })
         signed_tx = backend_account.sign_transaction(tx)
-        tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
         w3.eth.wait_for_transaction_receipt(tx_hash)
         on_chain = True
     except Exception as e:
         print("Solidity registration failed:", e)
 
-    return jsonify({"message":"User registered","block_hash":block_hash,"on_chain":on_chain})
+    return jsonify({
+        "message": "User registered",
+        "blockchain_address": blockchain_address,
+        "block_hash": block_hash,
+        "on_chain": on_chain
+    })
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -170,6 +199,9 @@ def login():
 
     if user:
         user["trust_score"] = calculate_trust_score(user["id"])
+        print(user["id"])
+        print(user["trust_score"])
+        print(user["blockchain_address"])
         return jsonify({"message":"Login successful","user":user})
     else:
         return jsonify({"message":"Invalid credentials"}), 401
@@ -237,29 +269,46 @@ def fund_project():
     investor_address = data.get("investor_address")
     amount = float(data.get("amount"))
 
+    # Convert amount to Wei
+    amount_wei = w3.toWei(amount, 'ether')
+
+    # Check investor balance
+    balance = w3.eth.get_balance(investor_address)
+    if balance < amount_wei:
+        return jsonify({"message": "Insufficient balance for funding"}), 400
+
+    # Update project funding in MySQL
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("UPDATE projects SET total_funded = total_funded + %s WHERE id=%s", (amount, project_id))
+    cursor.execute(
+        "UPDATE projects SET total_funded = total_funded + %s WHERE id=%s",
+        (amount, project_id)
+    )
     conn.commit()
     cursor.close()
     conn.close()
 
+    # Send funds via Web3
     on_chain = False
     try:
-        tx = contract_instance.functions.fundProject(project_id).build_transaction({
-            'from': investor_address,
-            'value': w3.toWei(amount,'ether'),
-            'nonce': w3.eth.get_transaction_count(investor_address),
+        # Sign transaction with backend account
+        tx = {
+            'from': backend_account.address,
+            'to': investor_address,  # If sending to project, replace with project contract address
+            'value': amount_wei,
             'gas': 3000000,
-            'gasPrice': w3.toWei('20','gwei')
-        })
-        tx_hash = w3.eth.send_transaction(tx)
+            'gasPrice': w3.toWei('20', 'gwei'),
+            'nonce': w3.eth.get_transaction_count(backend_account.address)
+        }
+
+        signed_tx = backend_account.sign_transaction(tx)
+        tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
         w3.eth.wait_for_transaction_receipt(tx_hash)
         on_chain = True
     except Exception as e:
         print("Funding failed:", e)
 
-    return jsonify({"message":"Project funded","on_chain":on_chain})
+    return jsonify({"message": "Project funded", "on_chain": on_chain})
 
 @app.route("/approve_milestone", methods=["POST"])
 def approve_milestone():

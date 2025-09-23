@@ -1,7 +1,7 @@
-// src/pages/ProjectDetails.tsx
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import type { UserType } from "../types";
 
 interface Milestone {
   id: number;
@@ -19,7 +19,12 @@ interface Project {
   milestones?: Milestone[];
 }
 
-const ProjectDetails: React.FC = () => {
+// Declare props
+interface ProjectDetailsProps {
+  user: UserType | null;
+}
+
+const ProjectDetails: React.FC<ProjectDetailsProps> = ({ user }) => {
   const { projectId } = useParams<{ projectId: string }>();
   const [project, setProject] = useState<Project | null>(null);
   const [amount, setAmount] = useState<number>(0);
@@ -42,12 +47,14 @@ const ProjectDetails: React.FC = () => {
 
   const handleFund = async () => {
     if (!project) return;
-    const storedUser = localStorage.getItem("user");
-    if (!storedUser) {
+
+    // Use user prop instead of localStorage
+    if (!user) {
       setMessage("You must be logged in to fund a project.");
       return;
     }
-    const investor_address = JSON.parse(storedUser).blockchain_address;
+
+    const investor_address = user.blockchain_address;
 
     try {
       const res = await axios.post("http://localhost:5000/fund_project", {

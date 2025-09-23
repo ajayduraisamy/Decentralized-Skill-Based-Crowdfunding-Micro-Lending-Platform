@@ -1,0 +1,6 @@
+step 1) Open terminal run (Ganache)  
+step 2) new terminal run (python contracts.py)
+step 3)  python app.py
+
+
+

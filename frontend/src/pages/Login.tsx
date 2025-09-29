@@ -36,14 +36,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+    <div >
+   <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 rounded-lg border border-white/40">
       <div className="max-w-md w-full">
-        {/* Logo/Header */}
-        <div className="text-center mb-8">
-          
-          <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
-          <p className="text-slate-300">Sign in to your account to continue</p>
-        </div>
+
+       
 
         {/* Login Card */}
         <div className="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-8">
@@ -53,7 +50,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+               <h1 className="text-3xl font-bold text-white text-center mb-2">Login</h1>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
                 Email Address
@@ -132,7 +130,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         
         
       </div>
-    </div>
+      </div>
+      </div>
   );
 };
 

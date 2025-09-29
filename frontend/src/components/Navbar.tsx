@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import type { UserType } from "../types";
 
 interface NavbarProps {
-  user?: UserType | null; // allow null
+  user?: UserType | null; 
   onLogout?: () => void;
 }
 
@@ -12,14 +12,14 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout }) => {
     <nav className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 shadow-lg">
       <div className="container mx-auto flex justify-between items-center">
         <div className="text-2xl font-bold tracking-wide">
-          <Link to="/">Crowdfund</Link>
+          <Link to="/">Block Chain Based Crowdfund Platform</Link>
         </div>
         <div className="flex items-center space-x-4">
           <Link className="hover:text-gray-200 transition-colors" to="/">Home</Link>
 
           {!user && (
             <>
-              <Link className="hover:text-gray-200 transition-colors" to="/register">Register</Link>
+              
               <Link className="hover:text-gray-200 transition-colors" to="/login">Login</Link>
             </>
           )}

@@ -1,0 +1,16 @@
+BORROWER                               INVESTOR
+   |                                      |
+   |---Create Project-------------------->|
+   |                                      |
+   |---Add Milestones-------------------->|
+   |                                      |
+   |                                      |---View Projects Approv Milestone
+   |                                      |
+   |                                      |---Create Loan 
+   |<-------------------Loan Created------|
+   |                                      |
+   |---Complete Milestone---------------->|
+   |                                      |
+   |---Repay Loan------------------------>|
+   |                                      |
+

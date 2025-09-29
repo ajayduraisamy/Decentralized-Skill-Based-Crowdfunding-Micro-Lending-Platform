@@ -19,6 +19,17 @@ contract MicroLendingPlatform {
         uint fundAmount;
         bool approved;
     }
+ // ------------------------------
+// Loan Structure
+// ------------------------------
+struct Loan {
+    uint id;
+    address borrower;
+    address lender;
+    uint projectId;
+    uint amount;
+    bool repaid;
+}
 
     mapping(uint => Project) public projects;
     mapping(uint => Milestone[]) public projectMilestones;
@@ -80,4 +91,30 @@ contract MicroLendingPlatform {
     function getMilestones(uint _projectId) public view returns (Milestone[] memory) {
         return projectMilestones[_projectId];
     }
+
+    uint public loanCount;
+mapping(uint => Loan) public loans;
+
+event LoanCreated(uint loanId, address borrower, address lender, uint projectId, uint amount);
+event LoanRepaid(uint loanId);
+
+// Create Loan
+function createLoan(address _borrower, address _lender, uint _projectId, uint _amount) public {
+    require(projects[_projectId].exists, "Project does not exist");
+    loanCount++;
+    loans[loanCount] = Loan(loanCount, _borrower, _lender, _projectId, _amount, false);
+    emit LoanCreated(loanCount, _borrower, _lender, _projectId, _amount);
+}
+
+// Repay Loan
+function repayLoan(uint _loanId) public payable {
+    Loan storage loan = loans[_loanId];
+    require(!loan.repaid, "Loan already repaid");
+    require(msg.value == loan.amount, "Incorrect repayment amount");
+
+    payable(loan.lender).transfer(msg.value);
+    loan.repaid = true;
+
+    emit LoanRepaid(_loanId);
+}
 }

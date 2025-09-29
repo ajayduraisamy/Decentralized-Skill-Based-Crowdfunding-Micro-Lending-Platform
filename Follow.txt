@@ -1,6 +1,17 @@
-step 1) Open terminal run (Ganache)  
-step 2) new terminal run (python contracts.py)
-step 3)  python app.py
+step 1)  Open terminal run (ganache)  
+
+step 2)  new terminal run ( cd backend , python contracts.py)
+
+step 3)  Update The in env file ACCOUNT_KEY,PRIVATE_KEY from ganache
+
+step 4)  new terminal  (cd backend ,python app.py)
+
+step 5) cd frontnend
+
+step 6) npm run dev
+
+
+
 
 
 
